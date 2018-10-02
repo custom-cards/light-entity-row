@@ -41,7 +41,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
     </div>
 </hui-generic-entity-row>
 
-<template is="dom-if" if="{{isSupported(SUPPORT_BRIGHTNESS)}}">
+<template is="dom-if" if="[[isOn]]">
     <div class="second-line flex">
         <span>Brightness</span>
         <paper-slider
@@ -56,7 +56,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
         </paper-slider>
     </div>
 </template>
-<template is="dom-if" if="{{isSupported(SUPPORT_COLOR_TEMP)}}">
+<template is="dom-if" if="[[isOn]]">
     <div class="second-line flex">
         <span>Temperature</span>
         <paper-slider
