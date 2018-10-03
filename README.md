@@ -16,8 +16,11 @@ temperature buttons show up.
       icon: mdi:lamp  # optional
       name: Lamp      # optional
       buttons:        # optional
-        name: Red
-        service_data:
-          color_name: red
+        - name: Red
+          service_data:
+            color_name: red
+        - name: Blue
+          service_data:
+            color_name: blue
 ```
 
