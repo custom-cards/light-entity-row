@@ -2,9 +2,9 @@
 
 ## Usage
 
-For use in an ~entites~ card. You can specify an array of extra
-buttons to add with an ~action_name~ and ~service_data~ to send to
-~light.turn_on~ for the supplied entity. If not supplied, only the
+For use in an `entites` card. You can specify an array of extra
+buttons to add with an `action_name` and `service_data` to send to
+`light.turn_on` for the supplied entity. If not supplied, only the
 temperature buttons show up.
 
 ```
