@@ -1,12 +1,3 @@
-const SUPPORT_BRIGHTNESS = 1
-const SUPPORT_COLOR_TEMP = 2
-const SUPPORT_EFFECT = 4
-const SUPPORT_FLASH = 8
-const SUPPORT_RGB_COLOR = 16
-const SUPPORT_TRANSITION = 32
-const SUPPORT_XY_COLOR = 64
-const SUPPORT_WHITE_VALUE = 128
-
 class AdjustableLightEntityRow extends Polymer.Element {
   static get template() {
     return Polymer.html`
@@ -41,7 +32,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
     </div>
 </hui-generic-entity-row>
 
-<template is="dom-if" if="[[isOn]]">
+<template is="dom-if" if="[[isSupported(SUPPORT_BRIGHTNESS)]]">
     <div class="second-line flex">
         <span>Brightness</span>
         <paper-slider
@@ -50,13 +41,13 @@ class AdjustableLightEntityRow extends Polymer.Element {
           value="{{brightness}}"
           step="[[step]]"
           pin
-          on-change="selectedValue"
+          on-change="selectedValueBrightness"
           ignore-bar-touch
           on-click="stopPropagation">
         </paper-slider>
     </div>
 </template>
-<template is="dom-if" if="[[isOn]]">
+<template is="dom-if" if="[[isSupported(SUPPORT_COLOR_TEMP)]]">
     <div class="second-line flex">
         <span>Temperature</span>
         <paper-slider
@@ -65,21 +56,21 @@ class AdjustableLightEntityRow extends Polymer.Element {
           value="{{color_temp}}"
           step="[[step]]"
           pin
-          on-change="selectedValueWhite"
+          on-change="selectedValueColorTemp"
           ignore-bar-touch
           on-click="stopPropagation">
         </paper-slider>
     </div>
     <div class="flex-box">
         <template is="dom-repeat" items="[[tempButtons]]">
-            <paper-button on-click="handleButton">{{item.action_name}}</paper-button>
+            <paper-button on-click="handleButton">{{item.name}}</paper-button>
         </template>
     </div>
 </template>    
     
     <div class="flex-box">
         <template is="dom-repeat" items="[[_config.buttons]]">
-            <paper-button on-click="handleButton">{{item.action_name}}</paper-button>
+            <paper-button on-click="handleButton">{{item.name}}</paper-button>
         </template>
     </div>
     `
@@ -106,10 +97,26 @@ class AdjustableLightEntityRow extends Polymer.Element {
     };
   }
 
+
   setConfig(config)
   {
+
+    const checkServiceRegexp = /^light\./
+    if (!checkServiceRegexp.test(config.entity)) {
+      throw new Error(`invalid entity ${config.entity}`)
+    }
+    
     this._config = config;
     this._config.buttons = config.buttons || []
+    this.SUPPORT_BRIGHTNESS = 1<<0
+    this.SUPPORT_COLOR_TEMP = 1<<1
+    this.SUPPORT_EFFECT = 1<<2
+    this.SUPPORT_FLASH = 1<<3
+    this.SUPPORT_RGB_COLOR = 1<<4
+    this.SUPPORT_TRANSITION = 1<<5
+    this.SUPPORT_XY_COLOR = 1<<6
+    this.SUPPORT_WHITE_VALUE = 1<<7
+
   }
 
   set hass(hass) {
@@ -124,20 +131,20 @@ class AdjustableLightEntityRow extends Polymer.Element {
       }
       const tempMid = this.tempMin + ((this.tempMax - this.tempMin) / 2)
       this.tempButtons = [{
-          action_name: "Cool",
-          service_data: {
-            color_temp: this.tempMin
-          }
+        name: "Cool",
+        service_data: {
+          color_temp: this.tempMin
+        }
       }, {
-          action_name: "Normal",
-          service_data: {
-            color_temp: tempMid
-          }
+        name: "Normal",
+        service_data: {
+          color_temp: tempMid
+        }
       }, {
-          action_name: "Warm",
-          service_data: {
-            color_temp: this.tempMax
-          }
+        name: "Warm",
+        service_data: {
+          color_temp: this.tempMax
+        }
       }]
       if(this.stateObj.state === 'on') {
         this.brightness = this.stateObj.attributes.brightness/2.55;
@@ -149,9 +156,10 @@ class AdjustableLightEntityRow extends Polymer.Element {
         this.isOn = false;
       }
     }
+
   }
 
-  selectedValue(ev) {
+  selectedValueBrightness(ev) {
     const value = Math.ceil(parseInt(this.brightness, 10)*2.55);
     const param = {entity_id: this.stateObj.entity_id };
     if(Number.isNaN(value)) return;
@@ -163,7 +171,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
     }
   }
 
-  selectedValueWhite(ev) {
+  selectedValueColorTemp(ev) {
     const value = parseInt(this.color_temp, 10)
     const param = {entity_id: this.stateObj.entity_id };
     if(Number.isNaN(value)) return;
