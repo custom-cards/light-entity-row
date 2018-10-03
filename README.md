@@ -11,11 +11,11 @@ temperature buttons show up.
 - type: entities
   title: Lights
   entities:
-    - type: "custom:adjustable-light-entity-row"
+    - type: "custom:light-entity-row"
       entity: light.lamp
       icon: mdi:lamp  # optional
       name: Lamp      # optional
-    - type: "custom:adjustable-light-entity-row"
+    - type: "custom:light-entity-row"
       entity: light.lamp_with_buttons
       buttons:        # optional
         - name: Red
