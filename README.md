@@ -16,6 +16,10 @@ temperature buttons show up.
       icon: mdi:lamp  # optional
       name: Lamp      # optional
     - type: "custom:light-entity-row"
+      entity: light.color_lamp
+      showColorPicker: true # shows color picker if supported
+      showColorSliders: true # shows hue/saturation sliders if supported
+    - type: "custom:light-entity-row"
       entity: light.lamp_with_buttons
       buttons:        # optional
         - name: Red

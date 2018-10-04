@@ -77,6 +77,35 @@ class AdjustableLightEntityRow extends Polymer.Element {
     </div>
 </template>    
 
+<template is="dom-if" if="[[showColorSliders]]">
+    <div class="second-line flex">
+        <span>Hue</span>
+        <paper-slider
+          min="0"
+          max="359"
+          value="{{color_hue}}"
+          step="1"
+          pin
+          on-change="selectedValueColorHue"
+          ignore-bar-touch
+          on-click="stopPropagation">
+        </paper-slider>
+    </div>
+    <div class="second-line flex">
+        <span>Saturation</span>
+        <paper-slider
+          min="0"
+          max="100"
+          value="{{color_saturation}}"
+          step="[[step]]"
+          pin
+          on-change="selectedValueColorSaturation"
+          ignore-bar-touch
+          on-click="stopPropagation">
+        </paper-slider>
+    </div>
+</template>    
+
 <template is="dom-if" if="[[showColorPicker]]">
     <div class="flex-box">
         <ha-color-picker on-colorselected="colorSelected"
@@ -108,6 +137,8 @@ class AdjustableLightEntityRow extends Polymer.Element {
       step: { type: Number, value: 5 },
       brightness: Number,
       color_temp: Number,
+      color_hue: Number,
+      color_saturation: Number,
       tempButtons: {
         type: Array,
         value: []
@@ -116,6 +147,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
       showBrightness: {type: Boolean, value: false},
       showColorTemp: {type: Boolean, value: false},
       showColorPicker: {type: Boolean, value: false},
+      showColorSliers: {type: Boolean, value: false},
       currentColor: {type: Object, value: {h: 0, s: 0}}
     };
   }
@@ -165,10 +197,14 @@ class AdjustableLightEntityRow extends Polymer.Element {
       if(this.stateObj.state === 'on') {
         this.brightness = this.stateObj.attributes.brightness/2.55;
         this.color_temp = this.stateObj.attributes.color_temp;
+        this.color_hue = this.stateObj.attributes.hs_color[0];
+        this.color_saturation = this.stateObj.attributes.hs_color[1];
         this.isOn = true;
       } else {
         this.brightness = this.brightnessMin;
         this.color_temp = tempMid;
+        this.color_hue = 0;
+        this.color_saturation = 0;
         this.isOn = false;
       }
       
@@ -193,6 +229,9 @@ class AdjustableLightEntityRow extends Polymer.Element {
           s: this.stateObj.attributes.hs_color[1]
         }
       }
+      if (this._config.showColorSliders && this.isSupported(SUPPORT_RGB_COLOR)) {
+        this.showColorSliders = true
+      }
     }
 
   }
@@ -214,6 +253,22 @@ class AdjustableLightEntityRow extends Polymer.Element {
     const param = {entity_id: this.stateObj.entity_id };
     if(Number.isNaN(value)) return;
     param.color_temp = value;
+    this._hass.callService('light', 'turn_on', param);
+  }
+
+  selectedValueColorHue(ev) {
+    const value = parseFloat(this.color_hue)
+    const param = {entity_id: this.stateObj.entity_id };
+    if(Number.isNaN(value)) return;
+    param.hs_color = [value, this.color_saturation];
+    this._hass.callService('light', 'turn_on', param);
+  }
+
+  selectedValueColorSaturation(ev) {
+    const value = parseFloat(this.color_saturation)
+    const param = {entity_id: this.stateObj.entity_id };
+    if(Number.isNaN(value)) return;
+    param.hs_color = [this.color_hue, value];
     this._hass.callService('light', 'turn_on', param);
   }
 
