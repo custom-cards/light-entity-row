@@ -1,3 +1,12 @@
+const SUPPORT_BRIGHTNESS = 1<<0
+const SUPPORT_COLOR_TEMP = 1<<1
+const SUPPORT_EFFECT = 1<<2
+const SUPPORT_FLASH = 1<<3
+const SUPPORT_RGB_COLOR = 1<<4
+const SUPPORT_TRANSITION = 1<<5
+const SUPPORT_XY_COLOR = 1<<6
+const SUPPORT_WHITE_VALUE = 1<<7
+
 class AdjustableLightEntityRow extends Polymer.Element {
   static get template() {
     return Polymer.html`
@@ -32,7 +41,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
     </div>
 </hui-generic-entity-row>
 
-<template is="dom-if" if="[[isSupported(SUPPORT_BRIGHTNESS)]]">
+<template is="dom-if" if="[[showBrightness]]">
     <div class="second-line flex">
         <span>Brightness</span>
         <paper-slider
@@ -47,7 +56,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
         </paper-slider>
     </div>
 </template>
-<template is="dom-if" if="[[isSupported(SUPPORT_COLOR_TEMP)]]">
+<template is="dom-if" if="[[showColorTemp]]">
     <div class="second-line flex">
         <span>Temperature</span>
         <paper-slider
@@ -67,12 +76,22 @@ class AdjustableLightEntityRow extends Polymer.Element {
         </template>
     </div>
 </template>    
-    
+
+<template is="dom-if" if="[[showColorPicker]]">
     <div class="flex-box">
-        <template is="dom-repeat" items="[[_config.buttons]]">
-            <paper-button on-click="handleButton">{{item.name}}</paper-button>
-        </template>
+        <ha-color-picker on-colorselected="colorSelected"
+                         width="200" height="200" radius="95"
+                         hs-color="[[currentColor]]"
+                         desired-hs-color="[[currentColor]]"
+                         on-click="stopPropagation"></ha-color-picker>
     </div>
+</template>
+
+<div class="flex-box">
+    <template is="dom-repeat" items="[[_config.buttons]]">
+        <paper-button on-click="handleButton">{{item.name}}</paper-button>
+    </template>
+</div>
     `
   }
 
@@ -93,10 +112,20 @@ class AdjustableLightEntityRow extends Polymer.Element {
         type: Array,
         value: []
       },
-      support: {}
+      support: {},
+      showBrightness: {type: Boolean, value: false},
+      showColorTemp: {type: Boolean, value: false},
+      showColorPicker: {type: Boolean, value: false},
+      currentColor: {type: Object, value: {h: 0, s: 0}}
     };
   }
 
+  colorSelected(ev) {
+    this.stopPropagation(ev)
+    const param = {entity_id: this.stateObj.entity_id };
+    param.hs_color = [ev.detail.hs.h, ev.detail.hs.s*100]
+    this._hass.callService('light', 'turn_on', param);
+  }
 
   setConfig(config)
   {
@@ -108,27 +137,14 @@ class AdjustableLightEntityRow extends Polymer.Element {
     
     this._config = config;
     this._config.buttons = config.buttons || []
-    this.SUPPORT_BRIGHTNESS = 1<<0
-    this.SUPPORT_COLOR_TEMP = 1<<1
-    this.SUPPORT_EFFECT = 1<<2
-    this.SUPPORT_FLASH = 1<<3
-    this.SUPPORT_RGB_COLOR = 1<<4
-    this.SUPPORT_TRANSITION = 1<<5
-    this.SUPPORT_XY_COLOR = 1<<6
-    this.SUPPORT_WHITE_VALUE = 1<<7
 
+    
   }
 
   set hass(hass) {
     this._hass = hass;
     this.stateObj = this._config.entity in hass.states ? hass.states[this._config.entity] : null;
     if(this.stateObj) {
-      if (this.stateObj.attributes.min_mireds) {
-        this.tempMin = this.stateObj.attributes.min_mireds
-      }
-      if (this.stateObj.attributes.max_mireds) {
-        this.tempMax = this.stateObj.attributes.max_mireds
-      }
       const tempMid = this.tempMin + ((this.tempMax - this.tempMin) / 2)
       this.tempButtons = [{
         name: "Cool",
@@ -154,6 +170,28 @@ class AdjustableLightEntityRow extends Polymer.Element {
         this.brightness = this.brightnessMin;
         this.color_temp = tempMid;
         this.isOn = false;
+      }
+      
+      if (!this._config.hideBrightness && this.isSupported(SUPPORT_BRIGHTNESS)) {
+        this.showBrightness = true
+      }
+      
+      if (!this._config.hideColorTemp && this.isSupported(SUPPORT_COLOR_TEMP)) {
+        this.showColorTemp = true
+        if (this.stateObj.attributes.min_mireds) {
+          this.tempMin = this.stateObj.attributes.min_mireds
+        }
+        if (this.stateObj.attributes.max_mireds) {
+          this.tempMax = this.stateObj.attributes.max_mireds
+        }
+      }
+      
+      if (this._config.showColorPicker && this.isSupported(SUPPORT_RGB_COLOR)) {
+        this.showColorPicker = true
+        this.currentColor = {
+          h: this.stateObj.attributes.hs_color[0],
+          s: this.stateObj.attributes.hs_color[1]
+        }
       }
     }
 
@@ -184,7 +222,6 @@ class AdjustableLightEntityRow extends Polymer.Element {
   }
 
   isSupported(feature) {
-    console.log(this.stateObj.attributes.supported_features, "&", feature, "=", this.stateObj.attributes.supported_features & feature)
     const res = this.stateObj.attributes.supported_features & feature
     return res != 0
   }
@@ -197,4 +234,4 @@ class AdjustableLightEntityRow extends Polymer.Element {
   }
 }
 
-customElements.define('adjustable-light-entity-row', AdjustableLightEntityRow);
+customElements.define('light-entity-row', AdjustableLightEntityRow);
