@@ -224,9 +224,16 @@ class AdjustableLightEntityRow extends Polymer.Element {
       
       if (this._config.showColorPicker && this.isSupported(SUPPORT_RGB_COLOR)) {
         this.showColorPicker = true
-        this.currentColor = {
-          h: this.stateObj.attributes.hs_color[0],
-          s: this.stateObj.attributes.hs_color[1]
+        if (this.stateObj.attributes && this.stateObj.attributes.hs_color && Array.isArray(this.stateObj.attributes.hs_color)) {
+          this.currentColor = {
+            h: this.stateObj.attributes.hs_color[0],
+            s: this.stateObj.attributes.hs_color[1]
+          }
+        } else {
+          this.currentColor = {
+            h: 0,
+            s: 0
+          }
         }
       }
       if (this._config.showColorSliders && this.isSupported(SUPPORT_RGB_COLOR)) {
