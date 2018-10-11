@@ -23,7 +23,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
  }
  .flex-box {
      display: flex;
-     justify-content: space-evenly;
+     justify-content: space-between;
  }
  paper-button {
      color: var(--primary-color);
