@@ -151,7 +151,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
       showTempButtons: {type: Boolean, value: false},
       showColorTemp: {type: Boolean, value: false},
       showColorPicker: {type: Boolean, value: false},
-      showColorSliers: {type: Boolean, value: false},
+      showColorSliders: {type: Boolean, value: false},
       currentColor: {type: Object, value: {h: 0, s: 0}}
     };
   }
