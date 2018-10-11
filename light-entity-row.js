@@ -133,6 +133,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
       isOn: { type: Boolean },
       stateObj: { type: Object, value: null },
       brightnessMin: { type: Number, value: 0 },
+      members: { type: Array, value: null },
       brightnessMax: { type: Number, value: 100 },
       tempMin: { type: Number, value: 175 },
       tempMax: { type: Number, value: 500 },
@@ -165,7 +166,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
   setConfig(config)
   {
 
-    const checkServiceRegexp = /^light\./
+    const checkServiceRegexp = /^(light|group)\./
     if (!checkServiceRegexp.test(config.entity)) {
       throw new Error(`invalid entity ${config.entity}`)
     }
@@ -178,12 +179,21 @@ class AdjustableLightEntityRow extends Polymer.Element {
 
   set hass(hass) {
     this._hass = hass;
-    this.stateObj = this._config.entity in hass.states ? hass.states[this._config.entity] : null;
+    this.stateObj = this._config.entity in hass.states ? hass.states[this._config.entity] : null
     if(this.stateObj) {
+      if (this.isGroup && this.stateObj.attributes.entity_id) {
+        this.members = this.stateObj.attributes
+          .entity_id.map(e => e in hass.states ? hass.states[e] : null)
+      }
       const tempMid = this.tempMin + ((this.tempMax - this.tempMin) / 2)
       if(this.stateObj.state === 'on') {
-        this.brightness = this.stateObj.attributes.brightness/2.55;
-        this.color_temp = this.stateObj.attributes.color_temp;
+        if (this.brightness === undefined && this.isGroup && this.members && this.members.length) {
+          this.brightness = (this.members.reduce((b, e) => b + e.attributes.brightness, 0)/this.members.length)/2.55
+          this.color_temp = this.members.reduce((t, e) => t + e.attributes.color_temp, 0)/this.members.length
+        } else if (!this.group) {
+          this.brightness = this.stateObj.attributes.brightness/2.55;
+          this.color_temp = this.stateObj.attributes.color_temp;
+        }
         if (this.stateObj.attributes.hs_color && Array.isArray(this.stateObj.attributes.hs_color)) {
           this.color_hue = this.stateObj.attributes.hs_color[0];
           this.color_saturation = this.stateObj.attributes.hs_color[1];
@@ -295,7 +305,12 @@ class AdjustableLightEntityRow extends Polymer.Element {
     ev.stopPropagation();
   }
 
+  get isGroup() {
+    return this._config.entity.indexOf(/^group/)
+  }
+
   isSupported(feature) {
+    if (this.isGroup) return true
     const res = this.stateObj.attributes.supported_features & feature
     return res != 0
   }
