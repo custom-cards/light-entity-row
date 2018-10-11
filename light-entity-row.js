@@ -70,11 +70,13 @@ class AdjustableLightEntityRow extends Polymer.Element {
           on-click="stopPropagation">
         </paper-slider>
     </div>
+<template is="dom-if" if="[[showTempButtons]]">
     <div class="flex-box">
         <template is="dom-repeat" items="[[tempButtons]]">
             <paper-button on-click="handleButton">{{item.name}}</paper-button>
         </template>
     </div>
+</template>    
 </template>    
 
 <template is="dom-if" if="[[showColorSliders]]">
@@ -145,6 +147,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
       },
       support: {},
       showBrightness: {type: Boolean, value: false},
+      showTempButtons: {type: Boolean, value: false},
       showColorTemp: {type: Boolean, value: false},
       showColorPicker: {type: Boolean, value: false},
       showColorSliers: {type: Boolean, value: false},
@@ -178,22 +181,6 @@ class AdjustableLightEntityRow extends Polymer.Element {
     this.stateObj = this._config.entity in hass.states ? hass.states[this._config.entity] : null;
     if(this.stateObj) {
       const tempMid = this.tempMin + ((this.tempMax - this.tempMin) / 2)
-      this.tempButtons = [{
-        name: "Cool",
-        service_data: {
-          color_temp: this.tempMin
-        }
-      }, {
-        name: "Normal",
-        service_data: {
-          color_temp: tempMid
-        }
-      }, {
-        name: "Warm",
-        service_data: {
-          color_temp: this.tempMax
-        }
-      }]
       if(this.stateObj.state === 'on') {
         this.brightness = this.stateObj.attributes.brightness/2.55;
         this.color_temp = this.stateObj.attributes.color_temp;
@@ -217,6 +204,10 @@ class AdjustableLightEntityRow extends Polymer.Element {
         this.showBrightness = true
       }
       
+      if (!this._config.hideTempButtons && this.isSupported(SUPPORT_COLOR_TEMP)) {
+        this.showTempButtons = true
+      }
+      
       if (!this._config.hideColorTemp && this.isSupported(SUPPORT_COLOR_TEMP)) {
         this.showColorTemp = true
         if (this.stateObj.attributes.min_mireds) {
@@ -225,6 +216,22 @@ class AdjustableLightEntityRow extends Polymer.Element {
         if (this.stateObj.attributes.max_mireds) {
           this.tempMax = this.stateObj.attributes.max_mireds
         }
+        this.tempButtons = [{
+          name: "Cool",
+          service_data: {
+            color_temp: this.tempMin
+          }
+        }, {
+          name: "Normal",
+          service_data: {
+            color_temp: tempMid
+          }
+        }, {
+          name: "Warm",
+          service_data: {
+            color_temp: this.tempMax
+          }
+        }]
       }
       
       if (this._config.showColorPicker && this.isSupported(SUPPORT_RGB_COLOR)) {
