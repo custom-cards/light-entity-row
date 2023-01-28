@@ -18,17 +18,27 @@ class AdjustableLightEntityRow extends Polymer.Element {
      display: flex;
      align-items: center;
  }
+ .second-line {
+     margin-left: 56px;
+ }
+ .second-line[hidden] {
+     display: none;
+ }
+ .aux-icon {
+     width: 20px;
+ }
  .second-line paper-slider {
      width: 100%;
  }
  .flex-box {
      display: flex;
-     justify-content: space-between;
+     justify-content: space-evenly;
  }
  paper-button {
      color: var(--primary-color);
      font-weight: 500;
      margin-right: -.57em;
+     cursor: pointer;
  }
 </style>
 <hui-generic-entity-row
@@ -42,8 +52,8 @@ class AdjustableLightEntityRow extends Polymer.Element {
 </hui-generic-entity-row>
 
 <template is="dom-if" if="[[showBrightness]]">
-    <div class="second-line flex">
-        <span>Brightness</span>
+    <div class="second-line flex" hidden$="[[!isOn]]">
+        <ha-icon icon="mdi:brightness-6" class="aux-icon"></ha-icon>
         <paper-slider
           min="[[brightnessMin]]"
           max="[[brightnessMax]]"
@@ -57,8 +67,8 @@ class AdjustableLightEntityRow extends Polymer.Element {
     </div>
 </template>
 <template is="dom-if" if="[[showColorTemp]]">
-    <div class="second-line flex">
-        <span>Temperature</span>
+    <div class="second-line flex" hidden$="[[!isOn]]">
+        <ha-icon icon="mdi:thermometer-lines" class="aux-icon"></ha-icon>
         <paper-slider
           min="[[tempMin]]"
           max="[[tempMax]]"
@@ -76,12 +86,12 @@ class AdjustableLightEntityRow extends Polymer.Element {
             <paper-button on-click="handleButton">{{item.name}}</paper-button>
         </template>
     </div>
-</template>    
-</template>    
+</template>
+</template>
 
 <template is="dom-if" if="[[showColorSliders]]">
-    <div class="second-line flex">
-        <span>Hue</span>
+    <div class="second-line flex" hidden$="[[!isOn]]">
+        <ha-icon icon="mdi:eyedropper-variant" class="aux-icon"></ha-icon>
         <paper-slider
           min="0"
           max="359"
@@ -93,8 +103,8 @@ class AdjustableLightEntityRow extends Polymer.Element {
           on-click="stopPropagation">
         </paper-slider>
     </div>
-    <div class="second-line flex">
-        <span>Saturation</span>
+    <div class="second-line flex" hidden$="[[!isOn]]">
+        <ha-icon icon="mdi:invert-colors" class="aux-icon"></ha-icon>
         <paper-slider
           min="0"
           max="100"
@@ -106,7 +116,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
           on-click="stopPropagation">
         </paper-slider>
     </div>
-</template>    
+</template>
 
 <template is="dom-if" if="[[showColorPicker]]">
     <div class="flex-box">
@@ -119,7 +129,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
 </template>
 
 <div class="flex-box">
-    <template is="dom-repeat" items="[[_config.buttons]]">
+    <template is="dom-repeat" items="[[_buttons]]">
         <paper-button on-click="handleButton">{{item.name}}</paper-button>
     </template>
 </div>
@@ -162,7 +172,6 @@ class AdjustableLightEntityRow extends Polymer.Element {
     param.hs_color = [ev.detail.hs.h, ev.detail.hs.s*100]
     this._hass.callService('light', 'turn_on', param);
   }
-
   setConfig(config)
   {
 
@@ -170,11 +179,12 @@ class AdjustableLightEntityRow extends Polymer.Element {
     if (!checkServiceRegexp.test(config.entity)) {
       throw new Error(`invalid entity ${config.entity}`)
     }
-    
-    this._config = JSON.parse(JSON.stringify(config));
-    this._config.buttons = config.buttons || []
 
-    
+    this._config = JSON.parse(JSON.stringify(config));
+    if (config.buttons) { 
+        this._buttons = JSON.parse(JSON.stringify(config.buttons))
+    }
+
   }
 
   set hass(hass) {
@@ -209,15 +219,15 @@ class AdjustableLightEntityRow extends Polymer.Element {
         this.color_saturation = 0;
         this.isOn = false;
       }
-      
+
       if (!this._config.hideBrightness && this.isSupported(SUPPORT_BRIGHTNESS)) {
         this.showBrightness = true
       }
-      
+
       if (!this._config.hideTempButtons && this.isSupported(SUPPORT_COLOR_TEMP)) {
         this.showTempButtons = true
       }
-      
+
       if (!this._config.hideColorTemp && this.isSupported(SUPPORT_COLOR_TEMP)) {
         this.showColorTemp = true
         if (this.stateObj.attributes.min_mireds) {
@@ -243,7 +253,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
           }
         }]
       }
-      
+
       if (this._config.showColorPicker && this.isSupported(SUPPORT_RGB_COLOR)) {
         this.showColorPicker = true
         if (this.stateObj.attributes && this.stateObj.attributes.hs_color && Array.isArray(this.stateObj.attributes.hs_color)) {
@@ -314,7 +324,7 @@ class AdjustableLightEntityRow extends Polymer.Element {
     const res = this.stateObj.attributes.supported_features & feature
     return res != 0
   }
-  
+
   handleButton(evt) {
     this.stopPropagation(evt)
     const button = evt.model.get('item')
